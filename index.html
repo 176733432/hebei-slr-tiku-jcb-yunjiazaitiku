@@ -1,11 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>河北建筑三类人员综合题库 · 练习+考试集成版</title>
+    <title>河北建筑三类人员题库 · 云库版</title>
     <style>
-        /* ========== 基础与公用 ========== */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Microsoft YaHei', Arial, sans-serif;
@@ -23,8 +22,6 @@
             padding: 20px;
         }
         h1, h2 { text-align: center; margin-bottom: 20px; color: #2c3e50; }
-        
-        /* 登录/注册界面 */
         .auth-container {
             max-width: 450px;
             margin: 50px auto;
@@ -70,7 +67,6 @@
         .message.error { background: #f8d7da; color: #721c24; display: block; }
         .message.info { background: #d1ecf1; color: #0c5460; display: block; }
 
-        /* 用户信息栏 */
         .user-info-bar {
             background: #e3f2fd; padding: 12px 20px; border-radius: 8px;
             margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;
@@ -85,8 +81,6 @@
             text-align: center; padding: 10px; border-radius: 20px; margin-bottom: 15px;
             font-weight: bold;
         }
-
-        /* 模式切换标签 */
         .mode-tabs {
             display: flex; margin-bottom: 25px; border-bottom: 2px solid #ddd;
         }
@@ -95,14 +89,9 @@
             background: #f0f0f0; border: none; font-size: 18px; font-weight: bold;
             transition: 0.3s; border-radius: 8px 8px 0 0;
         }
-        .mode-tab.active {
-            background: #2c3e50; color: white;
-        }
-
-        /* 练习模式 */
+        .mode-tab.active { background: #2c3e50; color: white; }
         .practice-panel { display: block; }
         .exam-panel { display: none; }
-
         .navigation { margin-bottom: 20px; }
         .nav-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
         .nav-button {
@@ -150,8 +139,7 @@
         }
         .wrong-code-input { padding: 10px; flex: 2; min-width: 200px; border: 1px solid #ddd; border-radius: 6px; }
         .refresh-btn { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; }
-
-        /* 考试模式 */
+        .backup-btn { padding: 10px 20px; background: #FF9800; color: white; border: none; border-radius: 6px; cursor: pointer; }
         .exam-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
         .type-notice { color: #d32f2f; font-size: 14px; text-align: center; margin: 10px 0; }
         .option-exam {
@@ -178,7 +166,7 @@
         }
         .loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.9); display: flex; flex-direction: column;
+            background: rgba(255,255,255,0.95); display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 2000;
         }
         .loading-text { font-size: 18px; margin-top: 20px; color: #333; }
@@ -194,7 +182,6 @@
             width: 40px; height: 40px; border: 4px solid #f3f3f3;
             border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;
         }
-
         @media (max-width: 700px) {
             .nav-row { flex-wrap: wrap; }
         }
@@ -202,9 +189,8 @@
 </head>
 <body>
 
-<!-- ========== 登录/注册界面 ========== -->
 <div id="auth-section" class="auth-container">
-    <h2>河北建筑三类人员综合题库·加载题库集成版</h2>
+    <h2>河北建筑三类人员题库·云库版</h2>
     <div class="auth-tabs">
         <button class="auth-tab active" onclick="switchAuthTab('login')">登录</button>
         <button class="auth-tab" onclick="switchAuthTab('register')">注册</button>
@@ -228,19 +214,17 @@
     <button type="button" class="btn-help" onclick="window.open('https://56f73f41.pinme.dev/', '_blank')">📖 使用说明</button>
 </div>
 
-<!-- 加载提示浮层 -->
 <div id="loading-overlay" class="loading-overlay" style="display:none;">
     <div class="spinner"></div>
     <div class="loading-text">正在加载题库数据...</div>
     <div class="loading-bar"><div id="loading-bar-inner" class="loading-bar-inner"></div></div>
 </div>
 
-<!-- ========== 主界面 ========== -->
 <div id="main-section" class="container" style="display:none;">
     <div class="user-info-bar" id="user-bar">
         <span id="user-email-display"></span>
         <span id="user-code-display"></span>
-        <button class="logout-btn" onclick="logout()">退出</button>
+        <button class="logout-btn" onclick="handleLogout()">退出</button>
     </div>
     <div id="trial-notice" class="trial-banner" style="display:none;">
         🎯 试用模式 · 还可作答 <span id="trial-remaining">5</span> 题
@@ -251,12 +235,12 @@
         <button class="mode-tab" data-mode="exam">📝 考试模式</button>
     </div>
 
-    <!-- 练习模式面板 -->
     <div id="practice-panel" class="practice-panel">
         <div class="wrong-code-input-container">
-            <label>错题库独有码：</label>
+            <label>错题码：</label>
             <input type="text" id="wrong-code-input" class="wrong-code-input" placeholder="输入8-20位混合码">
             <button class="refresh-btn" id="refresh-wrong-btn">刷新错题库</button>
+            <button class="backup-btn" id="backup-wrong-btn">错题备份到云端</button>
         </div>
         <div class="navigation">
             <div class="nav-row">
@@ -288,7 +272,6 @@
         </div>
     </div>
 
-    <!-- 考试模式面板 -->
     <div id="exam-panel" class="exam-panel">
         <div class="exam-header">
             <div>📌 题目 <span id="exam-current">1</span>/<span id="exam-total">200</span></div>
@@ -316,7 +299,6 @@
     </div>
 </div>
 
-<!-- 模态框 -->
 <div id="result-modal" class="modal"><div class="modal-content">
     <span class="close" onclick="closeModal('result-modal')">&times;</span>
     <h2 class="result-title">考试结果</h2>
@@ -345,153 +327,293 @@
     <p style="text-align:center;">共 <span id="wrong-count">0</span> 道</p>
     <button class="nav-btn" onclick="closeModal('wrong-modal')">关闭</button>
 </div></div>
+<div id="backup-modal" class="modal"><div class="modal-content" style="max-width:500px;">
+    <span class="close" onclick="closeModal('backup-modal')">&times;</span>
+    <h3>错题备份到云端</h3>
+    <p id="backup-status">正在准备备份...</p>
+    <div class="loading-bar"><div id="backup-progress-bar" class="loading-bar-inner" style="width:0%;"></div></div>
+</div></div>
 
 <script>
     (function(){
-        // 安全解码敏感配置
         const _k = {
-            get reg() { return atob('WkNYWDIwMDIwMzA4SlNTTA=='); },
-            get usr() { return atob('U0xaQ0syMDAyMDMwOEpTU0w='); }
+            get regKey() { return atob('WkNYWDIwMDIwMzA4SlNTTA=='); },
+            get usrKey() { return atob('U0xaQ0syMDAyMDMwOEpTU0w='); }
         };
         const CLOUD = {
-            REG_KEY: _k.reg,
-            USER_KEY: _k.usr,
+            REG_KEY: _k.regKey,
+            USER_KEY: _k.usrKey,
             ADMIN_EMAIL: '670656216@qq.com',
             API_UPDATE: 'https://api.textdb.online/update/',
             API_READ: 'https://textdb.online/',
             TRIAL_LIMIT: 5
         };
-
-        // 题库云端配置 (Base64编码)
-        const MAIN_KEY_ENCODED = "SlNUVEsyMDI2MDQyOFpER1M="; // 主KEY
-        const BATCH_PREFIX_ENCODED = "SlNUVEsyMDI2MDQyOFpER1NfYmF0Y2g="; // 前缀，加上序号构成分KEY
+        const MAIN_KEY = atob('SlNUVEsyMDI2MDQyOFpER1M=');
+        const BATCH_PREFIX = MAIN_KEY + '_batch';
 
         let currentUser = null;
         let isTrialMode = false;
         let trialRemaining = 5;
         let wrongCode = '';
-
-        // 本地题库数据 (练习和考试均使用此变量)
+        let wrongQuestionsDB = { single: [], multiple: [], judgment: [] };
         let questionBank = { single: [], multiple: [], judgment: [] };
 
-        // 练习模式变量
         let practiceMode = 'all', practiceType = 'single', practiceIndex = 0, practiceQuestions = [];
-        let wrongQuestionsDB = { single: [], multiple: [], judgment: [] }; 
         let selectedOptions = [];
-
-        // 考试模式变量
         let examData = {
             questions: [], userAnswers: {}, currentIndex: 0, filterType: 'all',
             answeredCount: 0, confirmed: {}, submitted: false,
             scores: { single:0, multiple:0, judgment:0 }
         };
-        let examWrongDetails = [];   
+        let examWrongDetails = [];
+        let currentMode = 'practice';
+        let isBackupInProgress = false;
 
-        // ========== 辅助函数 ==========
+        // 题库加载状态
+        let isLoadingBatches = false;
+        let remainingBatches = 0;
+        let totalBatchesNum = 0;
+
         window.switchAuthTab = function(tab){
             document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
             document.querySelectorAll('.auth-form').forEach(f=>f.classList.remove('active'));
-            if(tab==='login'){
-                document.querySelector('.auth-tab:nth-child(1)').classList.add('active');
-                document.getElementById('login-form').classList.add('active');
-            }else{
-                document.querySelector('.auth-tab:nth-child(2)').classList.add('active');
-                document.getElementById('register-form').classList.add('active');
-            }
+            document.querySelector(`.auth-tab${tab==='login'?':nth-child(1)':':nth-child(2)'}`).classList.add('active');
+            document.getElementById(`${tab}-form`).classList.add('active');
         };
         function showMsg(id,msg,type){ 
             let el=document.getElementById(id+'-message'); 
             el.textContent=msg; el.className='message '+type; 
             setTimeout(()=>el.className='message',5000); 
         }
-        function showLoading(show) {
-            document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
+        function showLoading(show, text) {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.style.display = show ? 'flex' : 'none';
+            if (show) document.querySelector('#loading-overlay .loading-text').textContent = text || '正在加载...';
         }
         function updateLoadingProgress(percent) {
             document.getElementById('loading-bar-inner').style.width = percent + '%';
         }
-
-        // 从云端加载所有分片题库，返回合并后的questionBank对象
-        async function loadQuestionBankFromCloud() {
-            const mainKey = atob(MAIN_KEY_ENCODED);
-            const batchPrefix = atob(BATCH_PREFIX_ENCODED);
-            // 获取分片总数
-            let totalBatches = 0;
-            try {
-                let resp = await fetch(CLOUD.API_READ + mainKey);
-                if (!resp.ok) throw new Error('主KEY读取失败');
-                let text = await resp.text();
-                if (!text) throw new Error('主KEY内容为空');
-                let mainData = JSON.parse(text);
-                totalBatches = mainData.batches || 0;
-                if (totalBatches <= 0) throw new Error('无效的分片数量');
-            } catch (e) {
-                console.error(e);
-                alert('题库配置读取失败，请刷新重试');
-                throw e;
-            }
-
-            // 分批并发请求，每批10个
-            const batchSize = 10;
-            const allQuestions = { single: [], multiple: [], judgment: [] };
-            let loadedCount = 0;
-
-            for (let i = 0; i < totalBatches; i += batchSize) {
-                const batchPromises = [];
-                for (let j = i; j < Math.min(i + batchSize, totalBatches); j++) {
-                    const key = `${batchPrefix}${j}`;
-                    batchPromises.push(
-                        fetch(CLOUD.API_READ + key)
-                            .then(r => r.text())
-                            .then(text => {
-                                if (text) {
-                                    let data = JSON.parse(text);
-                                    if (data.single) allQuestions.single.push(...data.single);
-                                    if (data.multiple) allQuestions.multiple.push(...data.multiple);
-                                    if (data.judgment) allQuestions.judgment.push(...data.judgment);
-                                }
-                                loadedCount++;
-                                updateLoadingProgress(Math.round((loadedCount / totalBatches) * 100));
-                            })
-                            .catch(e => console.error(`分片${j}加载失败`, e))
-                    );
-                }
-                await Promise.all(batchPromises);
-            }
-
-            // 可选的排序 (按id)
-            allQuestions.single.sort((a,b) => a.id - b.id);
-            allQuestions.multiple.sort((a,b) => a.id - b.id);
-            allQuestions.judgment.sort((a,b) => a.id - b.id);
-
-            return allQuestions;
+        function showBackupProgress(text, percent) {
+            document.getElementById('backup-modal').style.display = 'block';
+            document.getElementById('backup-status').textContent = text;
+            document.getElementById('backup-progress-bar').style.width = percent + '%';
+        }
+        function hideBackupProgress() {
+            document.getElementById('backup-modal').style.display = 'none';
         }
 
-        // 检查本地缓存或从云端加载
+        function getLocalWrongQuestions() {
+            if (!wrongCode) return { single: [], multiple: [], judgment: [] };
+            try { return JSON.parse(localStorage.getItem('wrong_' + wrongCode)) || { single: [], multiple: [], judgment: [] }; } 
+            catch (e) { return { single: [], multiple: [], judgment: [] }; }
+        }
+        function saveLocalWrongQuestions(data) {
+            if (!wrongCode) return;
+            localStorage.setItem('wrong_' + wrongCode, JSON.stringify(data));
+        }
+
+        async function fetchCloudWrongGroup(cloudKey) {
+            const resp = await fetch(CLOUD.API_READ + cloudKey);
+            if (!resp.ok) return null;
+            const text = await resp.text();
+            return text ? JSON.parse(text) : null;
+        }
+        async function uploadCloudWrongGroup(cloudKey, data) {
+            await fetch(CLOUD.API_UPDATE, {
+                method: 'POST',
+                headers: {'Content-Type':'application/x-www-form-urlencoded'},
+                body: `key=${encodeURIComponent(cloudKey)}&value=${encodeURIComponent(JSON.stringify(data))}`
+            });
+        }
+
+        async function getCloudWrongQuestions() {
+            if (!wrongCode) return { single: [], multiple: [], judgment: [] };
+            const mainData = await fetchCloudWrongGroup(wrongCode);
+            if (!mainData?.batches) return { single: [], multiple: [], judgment: [] };
+            const result = { single: [], multiple: [], judgment: [] };
+            for (let i = 1; i <= mainData.batches; i++) {
+                const batch = await fetchCloudWrongGroup(`${wrongCode}_${i}`);
+                if (batch) {
+                    if (batch.single) result.single.push(...batch.single);
+                    if (batch.multiple) result.multiple.push(...batch.multiple);
+                    if (batch.judgment) result.judgment.push(...batch.judgment);
+                }
+            }
+            return result;
+        }
+
+        async function syncWrongQuestions() {
+            if (!wrongCode || isTrialMode) return;
+            const local = getLocalWrongQuestions();
+            const cloud = await getCloudWrongQuestions();
+            const localTotal = local.single.length + local.multiple.length + local.judgment.length;
+            const cloudTotal = cloud.single.length + cloud.multiple.length + cloud.judgment.length;
+            if (cloudTotal > localTotal) {
+                wrongQuestionsDB = cloud;
+                saveLocalWrongQuestions(cloud);
+            } else {
+                wrongQuestionsDB = local;
+            }
+        }
+
+        async function backupWrongToCloud() {
+            if (!wrongCode || isTrialMode || isBackupInProgress) return;
+            isBackupInProgress = true;
+            showBackupProgress('正在分析数据...', 0);
+            const data = getLocalWrongQuestions();
+            const fullStr = JSON.stringify(data);
+            const MAX_CHARS = 6500;
+            const batches = [];
+            if (fullStr.length <= MAX_CHARS) {
+                batches.push(data);
+            } else {
+                let tempSingle = [...data.single];
+                let tempMulti = [...data.multiple];
+                let tempJudge = [...data.judgment];
+                while (tempSingle.length || tempMulti.length || tempJudge.length) {
+                    const batch = { single: [], multiple: [], judgment: [] };
+                    let batchStr = '';
+                    while (tempSingle.length && (batchStr.length + JSON.stringify(tempSingle[0]).length) < MAX_CHARS) {
+                        batch.single.push(tempSingle.shift());
+                        batchStr = JSON.stringify(batch);
+                    }
+                    while (tempMulti.length && (batchStr.length + JSON.stringify(tempMulti[0]).length) < MAX_CHARS) {
+                        batch.multiple.push(tempMulti.shift());
+                        batchStr = JSON.stringify(batch);
+                    }
+                    while (tempJudge.length && (batchStr.length + JSON.stringify(tempJudge[0]).length) < MAX_CHARS) {
+                        batch.judgment.push(tempJudge.shift());
+                        batchStr = JSON.stringify(batch);
+                    }
+                    batches.push(batch);
+                }
+            }
+            const totalBatches = batches.length;
+            showBackupProgress(`正在备份 (0/${totalBatches})`, 0);
+            await uploadCloudWrongGroup(wrongCode, { batches: totalBatches });
+            for (let i = 0; i < totalBatches; i++) {
+                const batchKey = `${wrongCode}_${i+1}`;
+                showBackupProgress(`正在备份 (${i+1}/${totalBatches})`, Math.round(((i+1)/totalBatches)*100));
+                let cloudBatch = null;
+                try {
+                    const resp = await fetch(CLOUD.API_READ + batchKey);
+                    if (resp.ok) cloudBatch = JSON.parse(await resp.text());
+                } catch(e) {}
+                const currentStr = JSON.stringify(batches[i]);
+                if (JSON.stringify(cloudBatch) !== currentStr) {
+                    await uploadCloudWrongGroup(batchKey, batches[i]);
+                }
+            }
+            showBackupProgress('备份完成！', 100);
+            setTimeout(() => { hideBackupProgress(); isBackupInProgress = false; }, 1500);
+        }
+
+        let loadPromise = null;
+        async function loadQuestionBankGradually() {
+            if (loadPromise) return loadPromise;
+            loadPromise = new Promise(async (resolve) => {
+                showLoading(true, '正在加载题库数据...');
+                updateLoadingProgress(0);
+                const mainResp = await fetch(CLOUD.API_READ + MAIN_KEY);
+                const mainData = await mainResp.json();
+                totalBatchesNum = mainData.batches || 0;
+                const allQuestions = { single: [], multiple: [], judgment: [] };
+                let loadedCount = 0;
+                const BATCH_CONCURRENT = 10;
+                async function loadBatch(start, end) {
+                    const promises = [];
+                    for (let i = start; i <= end; i++) {
+                        promises.push(
+                            fetch(CLOUD.API_READ + `${BATCH_PREFIX}${i}`)
+                                .then(r => r.text())
+                                .then(text => {
+                                    if (text) {
+                                        const data = JSON.parse(text);
+                                        if (data.single) allQuestions.single.push(...data.single);
+                                        if (data.multiple) allQuestions.multiple.push(...data.multiple);
+                                        if (data.judgment) allQuestions.judgment.push(...data.judgment);
+                                    }
+                                    loadedCount++;
+                                })
+                        );
+                    }
+                    await Promise.all(promises);
+                }
+                const checkEnough = () => allQuestions.single.length >= 50 && allQuestions.multiple.length >= 50 && allQuestions.judgment.length >= 50;
+                // 加载首批直到满足最低要求
+                for (let i = 0; i < totalBatchesNum; i += BATCH_CONCURRENT) {
+                    const end = Math.min(i + BATCH_CONCURRENT - 1, totalBatchesNum - 1);
+                    await loadBatch(i, end);
+                    updateLoadingProgress(Math.round((loadedCount / totalBatchesNum) * 100));
+                    if (checkEnough()) {
+                        questionBank = { ...allQuestions };
+                        localStorage.setItem('questionBank', JSON.stringify(questionBank));
+                        // 设置后台加载状态
+                        remainingBatches = totalBatchesNum - loadedCount;
+                        isLoadingBatches = true;
+                        showLoading(false);
+                        resolve();
+                        // 后台继续加载，每2秒更新一次
+                        const updateInterval = setInterval(() => {
+                            questionBank = { ...allQuestions };
+                            localStorage.setItem('questionBank', JSON.stringify(questionBank));
+                        }, 2000);
+                        (async () => {
+                            for (let j = i + BATCH_CONCURRENT; j < totalBatchesNum; j += BATCH_CONCURRENT) {
+                                const endJ = Math.min(j + BATCH_CONCURRENT - 1, totalBatchesNum - 1);
+                                await loadBatch(j, endJ);
+                                remainingBatches = totalBatchesNum - (j + Math.min(BATCH_CONCURRENT, totalBatchesNum - j));
+                                questionBank = { ...allQuestions };
+                                localStorage.setItem('questionBank', JSON.stringify(questionBank));
+                            }
+                            clearInterval(updateInterval);
+                            questionBank = { ...allQuestions };
+                            localStorage.setItem('questionBank', JSON.stringify(questionBank));
+                            isLoadingBatches = false;
+                            remainingBatches = 0;
+                        })();
+                        return;
+                    }
+                }
+                // 全部加载完成
+                questionBank = { ...allQuestions };
+                localStorage.setItem('questionBank', JSON.stringify(questionBank));
+                isLoadingBatches = false;
+                remainingBatches = 0;
+                showLoading(false);
+                resolve();
+            });
+            return loadPromise;
+        }
+
         async function ensureQuestionBank() {
             const cached = localStorage.getItem('questionBank');
             if (cached) {
-                try {
-                    questionBank = JSON.parse(cached);
-                    return;
-                } catch (e) {
-                    localStorage.removeItem('questionBank');
-                }
+                questionBank = JSON.parse(cached);
+                return;
             }
-            // 显示加载界面
-            showLoading(true);
-            updateLoadingProgress(0);
-            try {
-                questionBank = await loadQuestionBankFromCloud();
-                localStorage.setItem('questionBank', JSON.stringify(questionBank));
-            } catch (e) {
-                alert('题库加载失败，请检查网络后刷新页面');
-            } finally {
-                showLoading(false);
-            }
+            await loadQuestionBankGradually();
         }
 
-        // 认证
+        function saveAppState() {
+            localStorage.setItem('appState', JSON.stringify({
+                mode: currentMode,
+                practice: { practiceMode, practiceType, practiceIndex }
+            }));
+        }
+        function loadAppState() {
+            try {
+                const saved = localStorage.getItem('appState');
+                if (saved) {
+                    const state = JSON.parse(saved);
+                    practiceMode = state.practice?.practiceMode || 'all';
+                    practiceType = state.practice?.practiceType || 'single';
+                    practiceIndex = state.practice?.practiceIndex || 0;
+                    currentMode = (state.mode === 'exam') ? 'practice' : (state.mode || 'practice');
+                }
+            } catch(e) {}
+        }
+
         window.handleRegister = async function(e){
             e.preventDefault();
             const email=document.getElementById('reg-email').value.trim(), phone=document.getElementById('reg-phone').value.trim();
@@ -504,8 +626,7 @@
                 if(regs.find(r=>r.email===email)) return showMsg('register','邮箱已申请','error');
                 regs.push({email,phone,password:pwd,registerTime:new Date().toISOString(),status:'pending'});
                 await fetch(CLOUD.API_UPDATE,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`key=${CLOUD.REG_KEY}&value=${encodeURIComponent(JSON.stringify(regs))}`});
-                const mail=`mailto:${CLOUD.ADMIN_EMAIL}?subject=${encodeURIComponent('新注册申请')}&body=${encodeURIComponent(`邮箱:${email} 手机:${phone}`)}`;
-                window.location.href=mail;
+                window.location.href=`mailto:${CLOUD.ADMIN_EMAIL}?subject=新注册申请&body=邮箱:${email} 手机:${phone}`;
                 showMsg('register','申请已提交，请发邮件确认','success');
                 setTimeout(()=>switchAuthTab('login'),3000);
             }catch(e){ showMsg('register','网络错误','error'); }
@@ -526,7 +647,6 @@
         window.startTrial = function(){ isTrialMode=true; trialRemaining=5; currentUser=null; enterApp(); };
         
         async function enterApp(){
-            // 确保题库已就绪
             await ensureQuestionBank();
             if (!questionBank.single.length && !questionBank.multiple.length && !questionBank.judgment.length) {
                 alert('题库为空，无法使用');
@@ -541,70 +661,42 @@
                 document.getElementById('wrong-code-input').disabled=false; wrongCode='';
             }else{
                 document.getElementById('user-bar').style.display='flex';
-                document.getElementById('trial-notice').style.display='none';
                 document.getElementById('user-email-display').textContent=`用户：${currentUser.email}`;
                 document.getElementById('user-code-display').textContent=`错题码：${currentUser.wrongCode||'未分配'}`;
                 if(currentUser.wrongCode){
                     document.getElementById('wrong-code-input').value=currentUser.wrongCode;
                     document.getElementById('wrong-code-input').disabled=true;
                     wrongCode=currentUser.wrongCode;
-                    fetchWrongFromCloud();
+                    await syncWrongQuestions();
                 }
             }
+            loadAppState();
             initPractice();
             initExam();
-            switchMode('practice');
+            switchMode(currentMode);
         }
-        window.logout = function(){
+        window.handleLogout = async function() {
+            if (!isTrialMode && wrongCode) await backupWrongToCloud();
             currentUser=null; isTrialMode=false; localStorage.removeItem('slzck_user');
             location.reload();
         };
-
-        // 云端错题库 (仅存储 {id, type})
-        async function fetchWrongFromCloud(){
-            if(!wrongCode) return;
-            try{
-                let r=await fetch(CLOUD.API_READ+wrongCode);
-                if(r.ok){
-                    let t=await r.text();
-                    if(t) {
-                        let data = JSON.parse(t);
-                        wrongQuestionsDB = { single: data.single || [], multiple: data.multiple || [], judgment: data.judgment || [] };
-                    } else {
-                        wrongQuestionsDB = { single: [], multiple: [], judgment: [] };
-                    }
-                }
-            }catch(e){}
-        }
-        async function syncWrongToCloud(question){
-            if(!wrongCode || isTrialMode) return;
-            let arr = wrongQuestionsDB[question.type];
-            if(!arr.find(item => item.id === question.id && item.type === question.type)){
-                arr.push({ id: question.id, type: question.type });
+        window.addEventListener('beforeunload', () => {
+            if (!isTrialMode && wrongCode && !isBackupInProgress) {
+                navigator.sendBeacon(CLOUD.API_UPDATE + '?key=' + wrongCode + '&value=' + encodeURIComponent(JSON.stringify({batches:0})));
             }
-            await uploadWrongDB();
-        }
-        async function removeWrongFromCloud(question){
-            if(!wrongCode || isTrialMode) return;
-            let arr = wrongQuestionsDB[question.type];
-            wrongQuestionsDB[question.type] = arr.filter(item => !(item.id === question.id && item.type === question.type));
-            await uploadWrongDB();
-        }
-        async function uploadWrongDB(){
-            try{
-                await fetch(CLOUD.API_UPDATE,{
-                    method:'POST',
-                    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-                    body:`key=${wrongCode}&value=${encodeURIComponent(JSON.stringify(wrongQuestionsDB))}`
-                });
-            }catch(e){}
-        }
+        });
 
-        // 模式切换
         document.querySelectorAll('.mode-tab').forEach(t=>t.addEventListener('click',function(){
+            const targetMode = this.dataset.mode;
+            if (targetMode === 'exam' && isLoadingBatches) {
+                alert(`题库数据正在加载中，还差 ${remainingBatches} 组数据未加载完成，请稍候再使用考试功能。`);
+                return;
+            }
             document.querySelectorAll('.mode-tab').forEach(x=>x.classList.remove('active'));
             this.classList.add('active');
-            switchMode(this.dataset.mode);
+            currentMode = targetMode;
+            saveAppState();
+            switchMode(currentMode);
         }));
         function switchMode(mode){
             document.getElementById('practice-panel').style.display = mode==='practice'?'block':'none';
@@ -612,17 +704,17 @@
             if(mode==='exam') renderExamQuestion();
         }
 
-        // ========== 练习模式 ==========
         function initPractice(){
             document.getElementById('all-questions-btn').onclick=()=>{ practiceMode='all'; updatePracticeNav(); loadPracticeQuestions(); };
             document.getElementById('wrong-questions-btn').onclick=()=>{ if(isTrialMode) return alert('试用不支持错题库'); practiceMode='wrong'; updatePracticeNav(); loadPracticeQuestions(); };
             document.querySelectorAll('[data-type]').forEach(b=>b.addEventListener('click',function(){ practiceType=this.dataset.type; updatePracticeNav(); loadPracticeQuestions(); }));
-            document.getElementById('refresh-wrong-btn').onclick=()=>{ if(wrongCode) fetchWrongFromCloud().then(()=>{ if(practiceMode==='wrong') loadPracticeQuestions(); }); };
-            document.getElementById('wrong-code-input').addEventListener('change',function(){ if(isTrialMode||!currentUser){ wrongCode=this.value; fetchWrongFromCloud().then(()=>{ if(practiceMode==='wrong') loadPracticeQuestions(); }); } });
-            document.getElementById('practice-prev').onclick=()=>{ if(practiceIndex>0){ practiceIndex--; renderPracticeQuestion(); } };
-            document.getElementById('practice-next').onclick=()=>{ if(practiceIndex<practiceQuestions.length-1){ practiceIndex++; renderPracticeQuestion(); } };
+            document.getElementById('refresh-wrong-btn').onclick=()=>{ if(wrongCode) syncWrongQuestions().then(()=>{ if(practiceMode==='wrong') loadPracticeQuestions(); }); };
+            document.getElementById('wrong-code-input').addEventListener('change',function(){ if(isTrialMode||!currentUser){ wrongCode=this.value; syncWrongQuestions().then(()=>{ if(practiceMode==='wrong') loadPracticeQuestions(); }); } });
+            document.getElementById('backup-wrong-btn').onclick = backupWrongToCloud;
+            document.getElementById('practice-prev').onclick=()=>{ if(practiceIndex>0){ practiceIndex--; renderPracticeQuestion(); saveAppState(); } };
+            document.getElementById('practice-next').onclick=()=>{ if(practiceIndex<practiceQuestions.length-1){ practiceIndex++; renderPracticeQuestion(); saveAppState(); } };
             document.getElementById('practice-confirm').onclick=practiceConfirm;
-            document.getElementById('practice-jump-btn').onclick=()=>{ let idx=parseInt(document.getElementById('practice-jump').value)-1; if(idx>=0&&idx<practiceQuestions.length){ practiceIndex=idx; renderPracticeQuestion(); } };
+            document.getElementById('practice-jump-btn').onclick=()=>{ let idx=parseInt(document.getElementById('practice-jump').value)-1; if(idx>=0&&idx<practiceQuestions.length){ practiceIndex=idx; renderPracticeQuestion(); saveAppState(); } };
             updatePracticeNav(); loadPracticeQuestions();
         }
         function updatePracticeNav(){
@@ -638,8 +730,9 @@
                 let ids = wrongQuestionsDB[practiceType] || [];
                 practiceQuestions = ids.map(item => questionBank[practiceType].find(q => q.id === item.id)).filter(Boolean);
             }
-            practiceIndex = 0;
+            if (practiceIndex >= practiceQuestions.length) practiceIndex = 0;
             renderPracticeQuestion();
+            saveAppState();
         }
         function renderPracticeQuestion(){
             if(practiceQuestions.length === 0){
@@ -710,16 +803,29 @@
                 document.getElementById('trial-remaining').textContent = Math.max(0, trialRemaining);
                 if(trialRemaining <= 0) alert('试用结束');
             }
-
-            if(correct && practiceMode === 'wrong' && !isTrialMode && wrongCode){
-                await removeWrongFromCloud(q);
-                loadPracticeQuestions();
-            } else if(!correct && !isTrialMode && wrongCode && practiceMode === 'all'){
-                syncWrongToCloud(q);
+            if(!isTrialMode && wrongCode){
+                if(!correct && practiceMode === 'all'){
+                    addToWrongLocal(q);
+                } else if(correct && practiceMode === 'wrong'){
+                    removeFromWrongLocal(q);
+                    loadPracticeQuestions();
+                }
             }
         }
+        function addToWrongLocal(q) {
+            let arr = wrongQuestionsDB[q.type] || [];
+            if (!arr.find(item => item.id === q.id && item.type === q.type)) {
+                arr.push({ id: q.id, type: q.type });
+                wrongQuestionsDB[q.type] = arr;
+                saveLocalWrongQuestions(wrongQuestionsDB);
+            }
+        }
+        function removeFromWrongLocal(q) {
+            let arr = wrongQuestionsDB[q.type] || [];
+            wrongQuestionsDB[q.type] = arr.filter(item => !(item.id === q.id && item.type === q.type));
+            saveLocalWrongQuestions(wrongQuestionsDB);
+        }
 
-        // ========== 考试模式 ==========
         function initExam(){
             document.getElementById('exam-single-btn').onclick=()=>{ examData.filterType='single'; examData.currentIndex=0; renderExamQuestion(); };
             document.getElementById('exam-multi-btn').onclick=()=>{ examData.filterType='multiple'; examData.currentIndex=0; renderExamQuestion(); };
@@ -831,7 +937,7 @@
                 if(!correct){
                     let correctText = q.type==='multiple'? q.answer.map(a=>q.options[a.charCodeAt(0)-65]).join('；') : q.options[q.answer.charCodeAt(0)-65];
                     examWrongDetails.push({ questionNumber:q.questionNumber, title:q.question, type:q.type, userAnswer:ua, correctAnswer:Array.isArray(q.answer)?q.answer.join(','):q.answer, correctAnswerText:correctText });
-                    if(!isTrialMode && wrongCode) await syncWrongToCloud(q);
+                    if(!isTrialMode && wrongCode) addToWrongLocal(q);
                 }
             }
             let total=examData.scores.single+examData.scores.multiple+examData.scores.judgment;
@@ -853,7 +959,6 @@
         }
         window.closeModal = function(id){ document.getElementById(id).style.display='none'; };
 
-        // 启动
         let saved=localStorage.getItem('slzck_user');
         if(saved){ try{ currentUser=JSON.parse(saved); enterApp(); }catch(e){} }
     })();
