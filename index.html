@@ -140,6 +140,8 @@
         .wrong-code-input { padding: 10px; flex: 2; min-width: 200px; border: 1px solid #ddd; border-radius: 6px; }
         .refresh-btn { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; }
         .backup-btn { padding: 10px 20px; background: #FF9800; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .export-btn { padding: 10px 20px; background: #9C27B0; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .import-btn { padding: 10px 20px; background: #009688; color: white; border: none; border-radius: 6px; cursor: pointer; }
         .exam-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
         .type-notice { color: #d32f2f; font-size: 14px; text-align: center; margin: 10px 0; }
         .option-exam {
@@ -241,6 +243,9 @@
             <input type="text" id="wrong-code-input" class="wrong-code-input" placeholder="输入8-20位混合码">
             <button class="refresh-btn" id="refresh-wrong-btn">刷新错题库</button>
             <button class="backup-btn" id="backup-wrong-btn">错题备份到云端</button>
+            <button class="export-btn" id="export-wrong-btn">导出错题库</button>
+            <button class="import-btn" id="import-wrong-btn">导入错题库</button>
+            <input type="file" id="import-file-input" accept=".json" style="display:none;">
         </div>
         <div class="navigation">
             <div class="nav-row">
@@ -369,7 +374,6 @@
         let currentMode = 'practice';
         let isBackupInProgress = false;
 
-        // 题库加载状态
         let isLoadingBatches = false;
         let remainingBatches = 0;
         let totalBatchesNum = 0;
@@ -508,6 +512,54 @@
             setTimeout(() => { hideBackupProgress(); isBackupInProgress = false; }, 1500);
         }
 
+        // 错题库导出
+        function exportWrongQuestions() {
+            const data = getLocalWrongQuestions();
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'wrong_questions_backup.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 错题库导入
+        function importWrongQuestions() {
+            document.getElementById('import-file-input').click();
+        }
+
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data && Array.isArray(data.single) && Array.isArray(data.multiple) && Array.isArray(data.judgment)) {
+                        if (confirm('确定要导入错题库数据吗？这将替换当前错题库。')) {
+                            if (!wrongCode) {
+                                alert('未设置错题码，无法保存导入的数据。请先输入错题码。');
+                                return;
+                            }
+                            wrongQuestionsDB = data;
+                            saveLocalWrongQuestions(wrongQuestionsDB);
+                            if (practiceMode === 'wrong') {
+                                loadPracticeQuestions();
+                            }
+                            alert('导入成功！');
+                        }
+                    } else {
+                        throw new Error('格式错误');
+                    }
+                } catch (err) {
+                    alert('导入失败：文件格式不正确。');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
         let loadPromise = null;
         async function loadQuestionBankGradually() {
             if (loadPromise) return loadPromise;
@@ -540,7 +592,6 @@
                     await Promise.all(promises);
                 }
                 const checkEnough = () => allQuestions.single.length >= 50 && allQuestions.multiple.length >= 50 && allQuestions.judgment.length >= 50;
-                // 加载首批直到满足最低要求
                 for (let i = 0; i < totalBatchesNum; i += BATCH_CONCURRENT) {
                     const end = Math.min(i + BATCH_CONCURRENT - 1, totalBatchesNum - 1);
                     await loadBatch(i, end);
@@ -548,12 +599,10 @@
                     if (checkEnough()) {
                         questionBank = { ...allQuestions };
                         localStorage.setItem('questionBank', JSON.stringify(questionBank));
-                        // 设置后台加载状态
                         remainingBatches = totalBatchesNum - loadedCount;
                         isLoadingBatches = true;
                         showLoading(false);
                         resolve();
-                        // 后台继续加载，每2秒更新一次
                         const updateInterval = setInterval(() => {
                             questionBank = { ...allQuestions };
                             localStorage.setItem('questionBank', JSON.stringify(questionBank));
@@ -575,7 +624,6 @@
                         return;
                     }
                 }
-                // 全部加载完成
                 questionBank = { ...allQuestions };
                 localStorage.setItem('questionBank', JSON.stringify(questionBank));
                 isLoadingBatches = false;
@@ -711,6 +759,9 @@
             document.getElementById('refresh-wrong-btn').onclick=()=>{ if(wrongCode) syncWrongQuestions().then(()=>{ if(practiceMode==='wrong') loadPracticeQuestions(); }); };
             document.getElementById('wrong-code-input').addEventListener('change',function(){ if(isTrialMode||!currentUser){ wrongCode=this.value; syncWrongQuestions().then(()=>{ if(practiceMode==='wrong') loadPracticeQuestions(); }); } });
             document.getElementById('backup-wrong-btn').onclick = backupWrongToCloud;
+            document.getElementById('export-wrong-btn').onclick = exportWrongQuestions;
+            document.getElementById('import-wrong-btn').onclick = importWrongQuestions;
+            document.getElementById('import-file-input').onchange = handleImportFile;
             document.getElementById('practice-prev').onclick=()=>{ if(practiceIndex>0){ practiceIndex--; renderPracticeQuestion(); saveAppState(); } };
             document.getElementById('practice-next').onclick=()=>{ if(practiceIndex<practiceQuestions.length-1){ practiceIndex++; renderPracticeQuestion(); saveAppState(); } };
             document.getElementById('practice-confirm').onclick=practiceConfirm;
